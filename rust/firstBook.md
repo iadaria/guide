@@ -6,8 +6,15 @@
 >curl https://sh.rustup.rs -sSf | sh
 
 Обновление и деинсталяция Rust:
-> rustup update
+> rustup update\
 > rustup self uninstall
 
 > rustup --version
 
+### impl
+- реалзиуем методы
+- реализуем типаж в типе: 'impl Trait for Type {}'
+- передаем типажи в качестве параметров функции: 'pub fn notify(item: impl Trait) {}' Этот параметр принимает любой
+тип, реализующий указанный типаж.
+- предыдущий пункт - синтаксический сахар от 'pub fn notify<T: Trait>(item: T) {}'. В этом коде больше слов.
+Если функции передаются два одинаковых аргумента, то лучше использовать:'pub fn notify<T: Trait>(item1: T, item2: T) {}'
