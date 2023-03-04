@@ -18,3 +18,9 @@ add 'alias air='~/go/bin/air'
 > air
 
 >npx nodemon --exec "go run" ./main.go --signal SIGTERM - Пересобираем и перезапускаем автоматом
+
+### install dependencies
+> go get all
+
+> go build .
+> ./projectName
