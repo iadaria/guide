@@ -24,3 +24,10 @@ add 'alias air='~/go/bin/air'
 
 > go build .
 > ./projectName
+
+### go doc
+> vim ~/.zshrc
+add $HOME/go/bin:$PATH
+> source ~/.zshrc
+>godoc help
+>godoc -http=:8001

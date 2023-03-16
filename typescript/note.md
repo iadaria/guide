@@ -21,3 +21,6 @@
 > mkdir src
 > touch src/index.ts
 > npx tsc
+
+### debug
+add 'debugger' to line of code
