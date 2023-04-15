@@ -6,3 +6,6 @@
 ERC721 - nft
 
 - Constuctor is a function that's executed only once, when a contract gets deployed.
+
+### Gas
+https://etherscan.io/gastracker
