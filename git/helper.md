@@ -1,19 +1,27 @@
 1 Clear cache
+
 > git rm --cached <filename>
-Example: >git rm --cached .DS_Store
+> Example: >git rm --cached .DS_Store
 
 2 Add my settings and revert
+
 > git merge <branch>(with my settings)
 > git revert -m 1 <hash>
 
 ### delete previous commites
+
 > git reset -hard <commit-hash>
 > git push origin --force
-// maybe new branch?
+> // maybe new branch?
 
 ### push all
+
 > vim .git/config
-[remote "all"]
-  url = origin-host:path/proj.git
-  url = nodester-host:path/proj.git
+> [remote "all"]
+> url = origin-host:path/proj.git
+> url = nodester-host:path/proj.git
 > git push all master
+
+### searching
+
+exclude the word: "hello NOT word"
