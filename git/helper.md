@@ -25,3 +25,7 @@
 ### searching
 
 exclude the word: "hello NOT word"
+
+### find and delete .DS_Store
+
+> find . -name ".DS_Store" -type f -delete
