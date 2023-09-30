@@ -29,3 +29,15 @@ exclude the word: "hello NOT word"
 ### find and delete .DS_Store
 
 > find . -name ".DS_Store" -type f -delete
+
+### can't commit need to continue rebase
+
+If you need current code go to folder .git and delete .git/rebase-merge folder !
+
+> git reflog
+
+> git checkout <branch>
+
+> git rebase --hard HEAD@{1}
+
+> rm -rf .git/rebase-merge
