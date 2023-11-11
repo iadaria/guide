@@ -193,3 +193,151 @@ d = detach
 
 () > # escape=` (backtick)` - Инструкция для парсера
 () >
+
+### Dockerfile
+
+On server: > git clone https://our.project.git
+() > cd our-project
+() > nano ./apps/api/Dockerfile
+() ~/docker-demo > ls
+(. - current directory) ~/docker-demo > docker build -f ./apps/api/Dockerfile -t test:latest .
+() ~/docker-demo > docker run --name api -d test:latest
+() ~/docker-demo > docker ps
+() ~/docker-demo > docker logs api
+(test = 1.55GB -> 755MB) ~/docker-demo > docker images
+
+### Оптимизация images
+
+Утилита github.com/wagoodman/dive
+
+() > dive <image-name>
+(Changed dockerfile) >
+() > docker build -t test:latest -f ./apps/api/Dockerfile .
+() > docker run --name api -d test:latest || > docker run go2
+
+### Пример сборки на golang
+
+() >
+(current dir) > docker build -t go .
+
+### Сети Docker
+
+Libnetwork:
+
+- Network Namespace
+- Linux Bridge
+- Virtual Ethernet Devices
+- IP Table
+
+Bridge - default.
+host - напрямую без слоев
+overlay - Docker swarm - объединить несколько контейнеров
+macvlan - добавляем типа новое физическое устройство. Уникальный MAC адрес для контейнера.
+null - Без сети
+
+### Docker network commands
+
+connect - Подключить контейнер к сети
+create - Создать сеть
+disconnect - Отключение контейнера от сети
+inspect - Параметры сети
+ls -
+prune -
+rm -
+
+() > docker network ls
+() > docker network bridge
+() >
+() >
+
+### Bridge
+
+Когда хотим объединить несколько контейнеров в рамках одного хоста.
+Используется для локальной разработки.
+На продакш для небольшого сервиса и одного хоста.
+Конт1 может пингануть Конт2 (рис eth-bridge)
+Конт1 может пингануть Конт2, Конт2 может пингануть Конт3, но Конт1 не может пингануть Конт3. Для изолирования по разным сетям.(eth-bridge-2)
+
+- Простые в конфигурации
+- Обеспечивает локальный service discovery
+- Работает только на 1й хост машине
+
+(create am image) > docker build -t demo3:latest -f ./docker-demo-3/Dockerfile .
+(docker-demo-3) > docker build -t demo3:latest .
+(star a few containers from this image)
+() > docker run --name=node-1 -d demo3:latest
+() > docker run --name node-2 -d demo3:latest
+(Онм подключились к сети bridge)
+() > docker network inspect bridge
+(enter into the first container) > docker exec -it node-1 sh
+(ping container #2) > curl 172.17.0.3:3000
+(could not resolve host) > curl node-2:3000
+() > exit
+(resolve the problem - create the network) > docker network create my-network
+() > docker network ls
+(connecting the network with the first network) > docker network connect my-network node-1
+(connecting the network with the second network) > docker network connect my-network node-2
+() > docker network inspect my-network
+(enter to the second container) > docker exec -it node-2 sh
+(pinging by name of container) > curl node-1:3000
+() > docker run --name=node-3 --network my-network -d demo3:latest
+
+- В bridge сразу не добавился тк сразу указали network в которой должен быть этот контейнер
+  (inside the container - works) > curl localhost:3000
+  (3000:3000 host port пробрасывать контейнер на порт 3000)
+  (get error outside the container) > curl localhost:3000
+- открыли порт контейнера node-4 наружу, в нашу хостовую машину, чтобы мы могли достучаться. открываем порт 3000.
+  () > docker run --name=node-4 -p 3000:3000 --network my-network -d demo3:latest
+  (now works) > curl localhost:3000
+
+### Drivers host and null
+
+- Будет работать на хостовой сети
+  () > docker run --name node-5 -d --network host demo3
+  () > docker network ls
+  () > docker network inspect host
+  () > curl 127.0.0.1:3000
+  () > docker run --name node-6 -d --network none demo3
+  () > docker exec -it <hash> shd
+  () > curl localhost:3000
+  result: {"eth0":["192.168.65.3"],"eth1":["192.168.64.2"],"services1":["192.168.65.6"]}/opt/app #
+
+  (remove an image) > docker rm <image-name>
+  (remove container) > docker rm <name-container>
+
+### DNS
+
+DNS - распределенная система для получения информации о доменах. Чаще всего используется для получения IP-адреса по имени хоста.
+
+() > docker run node-5
+() > cat /etc/resolv.conf -> 192.168.1.1
+() > docker exec -it node-5 sh
+() > cat /etc/resolv.conf -> 192.168.65.7
+(change dns behavior ) > docker run --name node-8 -d --dns 8.8.8.8 demo3
+() > cat /etc/resolv.conf
+
+### Volumes
+
+Зачем нужны:
+
+- Персистентное хранение данных (например после удаления контейнера)
+- Экспортирование логов
+- Передача конфигов в контейнер
+- Share данных между контейнерами
+
+(listening on port 3000) > node src/index.js
+() > curl "127.0.0.1:3000/set?id=123"
+(result: 123) > curl "127.0.0.1:3000/get"
+() > docker build -t demo4:latest .
+() > docker volume ls
+() > docker volume inspect <hash>
+() > docker volume create demo
+() > docker volume ls
+(localization from 'Mountpoint')
+
+- На хостовой машине взять volume demo и примонтировать его внутрь(чтобы папочка data отображалась внутри нашего volume)
+  $ docker run --name volume-1 -d -v demo:/opt/app/data -p 3000:3000 demo4:latest
+  $ curl "127.0.0.1:3000/set?id=1234"
+- Проверяем что-то появилось
+  $ sudo ls /var/lib/docker/volumes/demo/\_data
+  (result: 1234): $ sudo cat /var/lib/docker/volumes/demo/\_data/req

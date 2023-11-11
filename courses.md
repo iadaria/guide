@@ -8,6 +8,11 @@ done: 5
 
 # Kuber - purple course
 
+# Next after docker
+
+github + docker
+https://www.youtube.com/watch?v=W1Go2TvkWZw&list=PLX0bTycx8m-X6nfZ1XVBkhivkISB4gsGt
+
 # Swift course
 
 - https://coursehunter.net/course/ios-razrabotchik-s-nulya-za-20-nedel?lesson=9
