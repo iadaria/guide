@@ -341,3 +341,143 @@ DNS - распределенная система для получения ин
 - Проверяем что-то появилось
   $ sudo ls /var/lib/docker/volumes/demo/\_data
   (result: 1234): $ sudo cat /var/lib/docker/volumes/demo/\_data/req
+- 2-ой контейнер с тем же volume, чтобы порты не конфликтовали
+  $ docker run --name volume-2 -d -v demo:/opt/app/data -p 3001:3000 demo4:latest
+- ? Контейнер 2 примонтировался к тому же volume. Записав данные в одном контейнере через порт 3000 мы можем их получить в другом контейнере через порт 3001
+  $ curl "127.0.0.1:3000/set?id=1234"
+- Удаление невозможно, только после удаления контейнеров
+  $ docker volume rm demo
+  $ docker rm volume-1 -f
+  $ docker rm volume-2 -f
+- Данные на месте даже после удаления контейнеров
+  $ sd ls /var/lib/docker/volumes
+  $ docker volume rm demo
+- Added VOLUME to Dockerfile
+- Будет тот же volume как-будто мы его создали руками без внятного имени
+  $ docker build -t demo4-1:latest .
+  $ docker image inspect demo4-1
+  $ docker run --name volume-3 -d -p 3000:3000 demo4-1
+  $ docker volume ls
+  $ curl "127.0.0.1:3000/set?id=12345"
+- С внятным именем, НЕ СОЗДАЕМ НОВЫЙ а BINDING-ся к существующему, неименные неудобны(не вытаскиваем данные)
+  $ docker run --name volume-4 -d -p 3000:3000 -v demo:/opt/app/data demo4-1
+  $ docker volume ls
+
+$ docker volume prune
+
+### Volume BIND MOUNTS
+
+(looking at) $ docker volume ls
+$ docker run --name volume-5 -d -p 3000:3000 -v ~/Users/daria/docker/data:/opt/app/data demo4-1
+$ pwd
+$ ls -l
+$ cat ~/Users/daria/docker/data/req
+
+- Volume ничего не изменилось
+  $ docker volume ls
+
+!- Лучше использовать конкретные именованные Volume и управлять/удалять их с помощью команд, а не искать где мы что намудрили
+
+### Volume Tempfs
+
+Необходимы для временного хранения данных вне слоя Docker (обычно приватных)
+
+- не работает на Swarm
+- Нельзя шарить между контейнерами
+- Удаляется после остановки контейнера
+  $ docker run --name volume-6 -d -p 3000:3000 --tmpfs /opt/app/data demo4-1
+  (empty )$ docker volume ls
+  $ curl "127.0.0.1:3000/set?id=12345"
+- Остановим и запустим он очистится. Полезно для секретов
+  $ docker stop volume-6
+  $ docker start volum-6
+- Другая запись
+  $ docker run --name volume-6 -d -p 3000:3000 --mount type=tmpfs,destination=/opt/app/data demo4-1
+
+### Скопировать в/из контейнера без volume
+
+$ docker run --name volume-7 -d -p 3000:3000 demo4
+(nothing) $ curl "127.0.0.1:3000/get"
+(/daria/docker)$ pwd
+
+- ИмяКонтейнера:путь
+  $ docker cp /home/iadaria/data volume-7:/opt/app/data
+- Обратно. Вытащить конфиги например.
+  $ docker cp volume-8:/opt/app/data /home/iadaria/test
+  (the same)$ docker cp volume-8:/opt/app/data/. /home/iadaria/test2
+
+### YAML
+
+### Docker-compose
+
+image or build обязательны.
+
+Все описание в одном файле
+(img docker-compose-about)
+(-d = detached)
+(docker-compose.yml is local) > docker compose up -d
+() > docker compose ls
+() > docker compose stop
+(stop and removing: volumes, networks) > docker compose down
+() > docker compose logs
+() > docker compose images
+(started processes) > docker compose top
+() > docker logs api
+
+- Profiles
+  Будете аккуратны тк если прописан то сервис просто так не запускается.
+  Нужны миграции, бэкап, поднимать отдельные части в тот или иной момент.
+  (add profile to the yml)
+  () > docker-compose up -d
+- activate profile and start all services with profile 'backend':
+  () > docker compose --profile backend up -d
+- stop all services with this profile:
+  () > docker compose --profile backend down
+- 2 variant
+  () > COMPOSE_PROFILES=backend docker compose up -d
+- activate two profiles simultaneously:
+  () > docker compose --profile backend --profile queue up -d
+
+(run a particular service. Only one docker container ) docker compose run api
+
+- Environments
+  (stop all containers) > docker compose down
+  () > docker compose --env-file .env.compose up -d
+  (preview) > docker compose --env-file .env.compose config
+  (rename prefix) > COMPOSE_PROJECT_NAME=mycompose docker compose --env-file .env.compose up -d
+- Disk space
+  (checking the disk space)
+  () > df
+- Композиция для dev and prod
+  Add docker-compose.dev.yml
+  () > docker compose -f docker-compose.yml -f docker-comose.dev.yml up -d
+  () > docker ps
+  () > docker compose -f docker-compose.yml -f docker-comose.dev.yml config
+
+### Docker registry
+
+Приложение которое предоставляет API, публиковать и забирать.
+Private registry:
+
+- github
+- gitlab
+- docker hub
+
+() > docker pull <name>
+() > docker push <name:tag>
+() > docker compose pull/push
+() > docker search <name>
+() > docker tag <image>:<tag> docker.pkg.github.com/name/repo/name:latest
+() > docker images
+() > docker push docker.pkg.github.com/name/repo/name
+
+- github
+  () > cat TOKEN.txt | docker login http://docker.pkg.github.com -u iadaria --password-stdin
+- locally
+  () > docker compose up -d
+  () > docker tag docker-demo_api:latest localhost:5000/api
+  () > docker images
+  () > docker push localhost:5000/api
+  () > docker image rm localhost:5000/api:latest
+  () > docker images
+  () > docker pull localhost:5000/api:latest

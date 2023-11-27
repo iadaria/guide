@@ -1,0 +1,1 @@
+- looking for 'monorepo' in file nest-cli.json: "monorepo path:nest-cli.json"

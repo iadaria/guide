@@ -1,0 +1,1 @@
+- require.reslove in webpack returns number (module ID) in node returns path name
