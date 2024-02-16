@@ -20,3 +20,5 @@
 
 > htop (processes)
 > ldd /bin/ls (dependency of process ls)
+
+- current ip address
